@@ -1,24 +1,22 @@
-const { Schema, model } = require('mongoose');
+const {Schema, model} = require('mongoose');
+const CursoSchema = new Schema({
+    nombre:{
+        type:String,
+        required:[true, 'El nombre es obligatorio']
 
-const CursosSchema = Schema({
-    nombre: {
-        type: String,
-        required: [true, 'El nombre es obligatorio'],
-
     },
-    descripcion: {
-        type: String,
+    descripcion:{
+        type:String,
+        required:[true, 'La descripcion es obligatoria']
     },
-    maestro: {
-        type: String,
-        required: [true, 'El Maestro es obligatorio'],
+    maestro:{
+        type: Schema.Types.ObjectId,
+        ref:'User'
     },
-    estado: {
-        type: Boolean,
-        default: true,
-        required: true
-    },
-
+    alumnos:{
+        type: Array,
+        default:[]
+        
+    }
 });
-
-module.exports = model('Cursos', CursosSchema)
+module.exports = model('Curso',CursoSchema);

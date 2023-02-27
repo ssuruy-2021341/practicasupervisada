@@ -1,92 +1,113 @@
-const { response, request } = require('express');
+const {response, request} = require('express');
 
-const Curso = require('../models/cursoss');
-const Usuario = require('../models/Usuarios');
+const Curso = require('../models/cursos');
+const User = require('../models/Usuarios');
 
-const getCurso = async (req = request, res = response) => {
-
-    const query = { estado: true };
-
+const getCurso = async(req = request, res = response) =>{
     const listaCursos = await Promise.all([
-        Curso.countDocuments(query),
-        Curso.find(query)
-    ]);
+        Curso.countDocuments(),
+        Curso.find()
+
+    ])
 
     res.json({
-        msg: 'GET API de usuarios',
+        msg: 'Cursos encontrados',
         listaCursos
+        
     })
-
 }
 
-
-const postCurso = async (req = request, res = response) => {
-
-    const nombre  = req.body.nombre.toUpperCase();
+const postCurso = async(req= request, res = response) =>{
+    const nombre = req.body.nombre;
     const descripcion = req.body.descripcion;
     const maestro = req.user._id;
-    const cursoDB = await Curso.findOne({ nombre, descripcion, maestro });
-    if (cursoDB) {
-        return res.status(400).json({
-            msg: `La categoria ${cursoDB.nombre}, ya existe en la DB`
-        });
-    }
+    const cursoDB = new Curso({nombre, descripcion, maestro});
+    await cursoDB.save();
 
     res.status(201).json({
-        msg: 'Post de curso',
-        curso
-    });
-
-}
-
-const putCurso = async (req = request, res = response) => {
-
-    const { id } = req.params;
-
-    const { _id, ...data } = req.body;
-
-    const editarCurso = await Curso.findByIdAndUpdate(id, data, { new: true });
-
-    res.json({
-        msg: 'PUT API de Curso',
-        editarCurso
+        msg: 'Curso Creado',
+        cursoDB
     })
-
 }
 
-const deletrCurso = async (req = request, res = response) => {
+const putCurso = async(req = request, res = response) =>{
+    const {id} = req.params;
+    const {_id, ...resto} = req.body;
+    const cursoEditado = await Curso.findByIdAndUpdate(id, resto, {new: true});
 
-    const { id } = req.params;
+    res.status(200).json({
+        msg: 'Curso Editado',
+        cursoEditado
+    })
+}
+
+const deleteCurso = async(req = request, res = response) =>{
+    const {id} = req.params;
     const existeCurso = await Curso.findOne({_id: id});
-    const users = existeCurso.alumnos;
+    const users = existeCurso.alumnos
     const maestro = existeCurso.maestro;
-
-    const cursoBorrado = await Curso.findByIdAndUpdate(id, { estado: false }, { new: true });
+    
+    const cursoEliminado = await Curso.findByIdAndDelete(id);
 
     for(let user of users){
-        await Usuario.findOneAndUpdate(
+        await User.findOneAndUpdate(
             {_id: user},
             {$pull: {'cursos': id}},
         );
     }
-    await Usuario.findOneAndUpdate(
+    await User.findOneAndUpdate(
         {_id: maestro},
         {$pull: {'cursos': id}},
 
     )
-
-
-    res.json({
-        msg: 'delete curso',
-        cursoBorrado
-    });
-
+    res.status(200).json({
+        msg: 'Curso eliminado',
+        cursoEliminado
+    })
 }
 
+const asignarAlumno = async(req = request, res = response) =>{
+    const {idCurso} = req.params;
+    const user = req.user._id;
+    const cursos = req.user.cursos;
+    const existeCurso = await Curso.findOne({_id: idCurso});
+    if(!existeCurso){
+        return res.status(404).json({
+            msg: 'Curso no encontrado'
+        })
+    }
+    if(cursos.length >= 3){
+        return res.status(400).json({
+            msg: 'Has alcanzado el límite de 3 cursos'
+
+        })
+    }
+    for(let curso of cursos){
+        if(existeCurso._id != curso) continue
+        var exists = curso
+    }
+    if(exists) return res.status(400).json({ msg: 'Ya tienes asignado este curso'})
+    const updatedUser = await User.findOneAndUpdate(
+        {_id: user},
+        {$push: {'cursos': idCurso}},
+        {new: true}
+    );
+    const updatedCurse = await Curso.findOneAndUpdate(
+        {_id: idCurso},
+        {$push: {'alumnos': user}},
+        {new: true}
+    )
+    res.status(200).json({
+        msg: 'Alumno asignado',
+        updatedUser,
+        updatedCurse
+    })
+}
 
 module.exports = {
-    obtenerCursos: getCurso,
-    crearCurso: postCurso,
-    actualizarCurso: putCurso,
-    eliminarCurso: deletrCurso
+    getCurso,
+    postCurso,
+    putCurso,
+    deleteCurso,
+    asignarAlumno
 }

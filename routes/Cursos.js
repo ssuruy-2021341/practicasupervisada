@@ -1,41 +1,31 @@
-
 const {Router} = require('express');
-const {getCurso, postCurso, putCurso, deleteCurso} = require('../controllers/Cursos');
-
-const { existeCursoPorId } = require('../helpers/db-validators');
-
-const { validarCampos } = require('../middlewares/Validar-Campos');
-const { validarJWT } = require('../middlewares/Validar-jwt');
-const { esProfRole } = require('../middlewares/Validar-rol');
+const {getCurso, postCurso, putCurso, deleteCurso, asignarAlumno} = require('../controllers/curso');
+const { validarJWT } = require('../middlewares/validar-jwt');
+const { esMaestroRole } = require('../middlewares/Validar-rol');
 
 const router = Router();
-
-router.get('/mostrar', getCurso);
-
-router.post('/agregar', [
+router.get('/mostrar',[
     validarJWT,
-    check('nombre', 'El nombre del curso es obligatorio').not().isEmpty(),
-    check('maestro', 'El nombre del profesor es obligatorio').not().isEmpty(),
-    validarCampos
+    esMaestroRole
+], getCurso);
+
+router.post('/agregar',[
+    validarJWT,
+    esMaestroRole
+    
 ], postCurso);
 
 router.put('/editar/:id',[
-    validarJWT,
-    check('id', 'No es un id de mongo valido').isMongoId(),
-    check('id').custom( existeCursoPorId ),
-    check('nombre', 'El nombre del curso es obligatorio').not().isEmpty(),
-    validarCampos
+    validarJWT
 ], putCurso);
-
-
 
 router.delete('/eliminar/:id',[
     validarJWT,
-    esProfRole,
-    check('id', 'No es un id de mongo valido').isMongoId(),
-    check('id').custom( existeCursoPorId ),
-    validarCampos
+    esMaestroRole
 ], deleteCurso);
 
-
+router.get('/asignar/:idCurso',[
+    validarJWT,
+    esMaestroRole
+], asignarAlumno);
 module.exports = router;

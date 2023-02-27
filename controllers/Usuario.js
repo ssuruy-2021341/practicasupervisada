@@ -1,92 +1,135 @@
-const { response, request } = require('express');
+const {response, request} = require('express');
+const User = require('../models/Usuarios');
+const bcryptjs = require('bcryptjs');
 
-const Curso = require('../models/cursos');
-const Usuario = require('../models/Usuarios');
-
-const getCurso = async (req = request, res = response) => {
-
-    const query = { estado: true };
-
-    const listaCursos = await Promise.all([
-        Curso.countDocuments(query),
-        Curso.find(query)
-    ]);
+const getUsers = async (req = request, res = response) => {
+    const listaUsers = await Promise.all([
+        User.countDocuments(),
+        User.find()
+    ])
 
     res.json({
-        msg: 'GET API de usuarios',
-        listaCursos
+        msg: 'lista de usuarios',
+        listaUsers
     })
-
 }
 
 
-const postCurso = async (req = request, res = response) => {
+const postUser = async (req = request, res = response) => {
+    const {nombre, email, password, role, cursos} = req.body;
+    const userDB = new User({nombre, email, password, role, cursos});
 
-    const nombre  = req.body.nombre.toUpperCase();
-    const descripcion = req.body.descripcion;
-    const maestro = req.user._id;
-    const cursoDB = await Curso.findOne({ nombre, descripcion, maestro });
-    if (cursoDB) {
-        return res.status(400).json({
-            msg: `La categoria ${cursoDB.nombre}, ya existe en la DB`
-        });
+    const salt = bcryptjs.genSaltSync();
+    userDB.password = bcryptjs.hashSync(password, salt);
+
+    await userDB.save();
+
+    res.json({
+        msg: 'Usuario Creado',
+        userDB
+    })
+}
+
+const putUser = async(req = request, res = response) => {
+    const {id} = req.params;
+    const {_id, role, ...resto} = req.body;
+    const salt = bcryptjs.genSaltSync();
+    resto.password = bcryptjs.hashSync(resto.password, salt);
+    const userEditado = await User.findByIdAndUpdate(id, resto, {new: true});
+    res.status(200).json({
+        msg: 'Usuario Editado',
+        userEditado
+    })
+}
+const putMyUser = async (req = request, res = response) => {
+    const {id} = req.params;
+    const user = req.user._id;
+    const idUser = user.toString();
+
+    if (id === idUser) {
+        const {_id, role,...resto} = req.body;
+        const salt = bcryptjs.genSaltSync();
+        resto.password = bcryptjs.hashSync(resto.password, salt);
+        const userEditado = await User.findByIdAndUpdate(id, resto, {new: true});
+        res.status(200).json({
+            msg: 'Usuario Editado',
+            userEditado
+        })
+    } else{
+        res.status(401).json({
+            msg: 'Solo puedes editar tu propia cuenta:>'
+
+        })
     }
 
-    res.status(201).json({
-        msg: 'Post de curso',
-        curso
-    });
-
 }
 
-const putCurso = async (req = request, res = response) => {
+const deleteUser = async(req = request, res = response) => {
+    const {id} = req.params;
+    const userEliminado = await User.findByIdAndDelete(id);
 
-    const { id } = req.params;
-
-    const { _id, ...data } = req.body;
-
-    const editarCurso = await Curso.findByIdAndUpdate(id, data, { new: true });
-
-    res.json({
-        msg: 'PUT API de Curso',
-        editarCurso
+    res.status(200).json({
+        msg: 'Usuario Eliminado',
+        userEliminado
     })
-
 }
 
-const deletrCurso = async (req = request, res = response) => {
+const deleteMyUser = async(req = request, res = response) => {
+    const {id} = req.params;
+    const user = req.user._id;
+    const idUser = user.toString();
 
-    const { id } = req.params;
-    const existeCurso = await Curso.findOne({_id: id});
-    const users = existeCurso.alumnos;
-    const maestro = existeCurso.maestro;
+    if(id === idUser){
+        const userEliminado = await User.findByIdAndDelete(id);
+        res.status(200).json({
+            msg: 'Usuario Eliminado',
+            userEliminado
+        })
+    }else{
+        res.status(401).json({
+            msg: 'Solo puedes eliminar tu propia cuenta:>'
 
-    const cursoBorrado = await Curso.findByIdAndUpdate(id, { estado: false }, { new: true });
-
-    for(let user of users){
-        await Usuario.findOneAndUpdate(
-            {_id: user},
-            {$pull: {'cursos': id}},
-        );
+        })
     }
-    await Usuario.findOneAndUpdate(
-        {_id: maestro},
-        {$pull: {'cursos': id}},
+    
+}
 
-    )
+const registerUser = async (req = request, res = response) => {
+    const {nombre, email, password} = req.body;
 
+    const userRegistered =  new User({nombre, email, password});
+    const salt = bcryptjs.genSaltSync();
+    userRegistered.password = bcryptjs.hashSync(password, salt);
+
+    await userRegistered.save();
+
+    res.status(200).json({
+        msg: 'Bienvenido: registro exitoso',
+        userRegistered
+        
+    })
+}
+
+const getMyCourses = async (req = request, res = response) => {
+    const user = req.user._id;
+    const cursos = req.user.cursos
 
     res.json({
-        msg: 'delete curso',
-        cursoBorrado
-    });
-
+        msg: 'Lista de cursos',
+        cursos
+    })
+    
 }
 
 
 module.exports = {
-    obtenerCursos: getCurso,
-    crearCurso: postCurso,
-    actualizarCurso: putCurso,
-    eliminarCurso: deletrCurso
+    getUsers,
+    postUser,
+    putUser,
+    deleteUser,
+    registerUser,
+    getMyCourses,
+    deleteMyUser,
+    putMyUser
+    
 }

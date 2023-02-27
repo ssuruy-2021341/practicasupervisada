@@ -1,5 +1,5 @@
-const {Router} = require('express');
-const {getCurso, postCurso, putCurso, deleteCurso, asignarAlumno} = require('../controllers/curso');
+const { Router } = require('express');
+const { getCurso, postCurso, putCurso, deleteCurso, asignarAlumno} = require('../controllers/Cursos');
 const { validarJWT } = require('../middlewares/validar-jwt');
 const { esMaestroRole } = require('../middlewares/Validar-rol');
 

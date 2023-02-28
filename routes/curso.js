@@ -1,7 +1,7 @@
-const { Router } = require('express');
-const { getCurso, postCurso, putCurso, deleteCurso, asignarAlumno} = require('../controllers/Cursos');
+const {Router} = require('express');
+const {getCurso, postCurso, putCurso, deleteCurso, asignarAlumno} = require('../controllers/curso');
 const { validarJWT } = require('../middlewares/validar-jwt');
-const { esMaestroRole } = require('../middlewares/Validar-rol');
+const { esMaestroRole } = require('../middlewares/validar-roles');
 
 const router = Router();
 router.get('/mostrar',[
@@ -26,6 +26,5 @@ router.delete('/eliminar/:id',[
 
 router.get('/asignar/:idCurso',[
     validarJWT,
-    esMaestroRole
 ], asignarAlumno);
 module.exports = router;

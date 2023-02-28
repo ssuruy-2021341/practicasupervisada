@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const {dbConection} = require('../database/base-de-datos');
+const {dbConection} = require('../database/config');
 
 class Server{
     constructor(){
@@ -8,7 +8,7 @@ class Server{
         this.port = process.env.PORT;
         this.cursoPath = '/api/cursos'
         this.authPath = '/api/auth'
-        this.userPath = '/api/usuarios'
+        this.userPath = '/api/users'
 
         
         this.conectarDB();
@@ -28,9 +28,9 @@ class Server{
             this.app.use(express.static('public'));
         }
         routes(){
-            this.app.use(this.cursoPath, require('../routes/Cursos'));
-            this.app.use(this.authPath, require('../routes/Auth'));
-            this.app.use(this.userPath, require('../routes/Usuarios'));
+            this.app.use(this.cursoPath, require('../routes/curso'));
+            this.app.use(this.authPath, require('../routes/auth'));
+            this.app.use(this.userPath, require('../routes/user'));
 
         }
         listen(){
@@ -38,6 +38,8 @@ class Server{
                 console.log(`Server running in port ${this.port}`);
             });
         }
+        
+
         
 }
 module.exports = Server;

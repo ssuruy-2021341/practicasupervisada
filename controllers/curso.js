@@ -1,7 +1,7 @@
 const {response, request} = require('express');
 
-const Curso = require('../models/cursos');
-const User = require('../models/Usuarios');
+const Curso = require('../models/curso');
+const User = require('../models/user');
 
 const getCurso = async(req = request, res = response) =>{
     const listaCursos = await Promise.all([
